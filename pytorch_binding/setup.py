@@ -1,56 +1,63 @@
 # build.py
 import os
 import platform
-import sys
-from distutils.core import setup
+from setuptools import setup, Extension
+from setuptools.command.build_ext import build_ext
 
-from torch.utils.ffi import create_extension
 
 extra_compile_args = ['-std=c++11', '-fPIC']
-warp_ctc_path = "../build"
 
-if "CUDA_HOME" not in os.environ:
+enable_gpu = ('CUDA_HOME' in os.environ)
+if not enable_gpu:
     print("CUDA_HOME not found in the environment so building "
           "without GPU support. To build with GPU support "
           "please define the CUDA_HOME environment variable. "
           "This should be a path which contains include/cuda.h")
-    enable_gpu = False
-else:
-    enable_gpu = True
 
 if platform.system() == 'Darwin':
     lib_ext = ".dylib"
+    extra_compile_args.extend(['-DAPPLE', '-stdlib=libc++', '-mmacosx-version-min=10.8'])
 else:
     lib_ext = ".so"
 
-headers = ['src/cpu_binding.h']
-
 if enable_gpu:
     extra_compile_args += ['-DWARPCTC_ENABLE_GPU']
-    headers += ['src/gpu_binding.h']
 
-if "WARP_CTC_PATH" in os.environ:
-    warp_ctc_path = os.environ["WARP_CTC_PATH"]
-if not os.path.exists(os.path.join(warp_ctc_path, "libwarpctc" + lib_ext)):
-    print(("Could not find libwarpctc.so in {}.\n"
-           "Build warp-ctc and set WARP_CTC_PATH to the location of"
-           " libwarpctc.so (default is '../build')").format(warp_ctc_path))
-    sys.exit(1)
-include_dirs = [os.path.realpath('../include')]
 
-ffi = create_extension(
-    name='warp_ctc',
-    language='c++',
-    headers=headers,
-    sources=['src/binding.cpp'],
-    with_cuda=enable_gpu,
-    include_dirs=include_dirs,
-    library_dirs=[os.path.realpath(warp_ctc_path)],
-    libraries=['warpctc'],
-    extra_link_args=['-Wl,-rpath,' + os.path.realpath(warp_ctc_path)],
-    extra_compile_args=extra_compile_args)
-ffi = ffi.distutils_extension()
-ffi.name = 'warpctc_pytorch._warp_ctc'
+ext_modules = [
+    Extension(
+        'warpctc_pytorch._warp_ctc',
+        sources=[
+            'src/binding.cpp',
+            os.path.realpath('../src/ctc_entrypoint.cpp')
+        ],
+        extra_compile_args=extra_compile_args,
+        language='c++'
+    )
+]
+
+
+class BuildExt(build_ext):
+    def build_extensions(self):
+        import torch
+
+        torch_dir = os.path.dirname(torch.__file__)
+        include_dirs = [
+            os.path.realpath('../include'),
+            os.path.join(torch_dir, 'lib/include'),
+            os.path.join(torch_dir, 'lib/include/TH'),
+            os.path.join(torch_dir, 'lib/include/THC'),
+        ]
+
+        if enable_gpu:
+            include_dirs.append(os.path.join(os.environ['CUDA_HOME'], 'include'))
+
+        for ext in self.extensions:
+            ext.include_dirs = include_dirs
+
+        build_ext.build_extensions(self)
+
+
 setup(
     name="warpctc_pytorch",
     version="0.1",
@@ -60,5 +67,9 @@ setup(
     author_email="jared.casper@baidu.com, sean.narenthiran@digitalreasoning.com",
     license="Apache",
     packages=["warpctc_pytorch"],
-    ext_modules=[ffi],
+    setup_requires=['pybind11>=2.2.1', 'torch'],
+    install_requires=['pybind11>=2.2.1', 'torch'],
+    ext_modules=ext_modules,
+    cmdclass={'build_ext': BuildExt},
+    test_suite='tests',
 )

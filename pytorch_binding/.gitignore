@@ -1,6 +1,3 @@
 __pycache__
-dist
 *.egg-info
 *.so
-include/cuda
-*.pyc

@@ -20,8 +20,9 @@ public:
     CpuCTC(int alphabet_size, int minibatch, void* workspace, int num_threads,
            int blank_label) :
             alphabet_size_(alphabet_size), minibatch_(minibatch),
-            num_threads_(num_threads), workspace_(workspace),
-            blank_label_(blank_label) {
+            num_threads_(num_threads), blank_label_(blank_label),
+            workspace_(workspace)
+             {
 #if defined(CTC_DISABLE_OMP) || defined(APPLE)
 #else
         if (num_threads > 0) {

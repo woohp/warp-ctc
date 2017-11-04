@@ -12,11 +12,11 @@ places = 5
 
 
 def run_grads(label_sizes, labels, probs, sizes):
-    probs = Variable(probs, requires_grad=True)
+    probs = Variable(probs.cuda(), requires_grad=True)
     cost = ctc_loss(probs, labels, sizes, label_sizes)
     cost.backward()
     cpu_cost = cost.data[0]
-    probs = Variable(probs.data.cuda(), requires_grad=True)
+    probs = Variable(probs.data, requires_grad=True)
     cost = ctc_loss(probs, labels, sizes, label_sizes)
     cost.backward()
     gpu_cost = cost.data[0]
