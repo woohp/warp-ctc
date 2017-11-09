@@ -35,7 +35,7 @@ int cpu_ctc(size_t _probs,
     if (grads->storage) {
         grads_ptr = grads->storage->data + grads->storageOffset;
     } else {
-        grads_ptr = NULL; // this will trigger the score forward code path
+        grads_ptr = nullptr; // this will trigger the score forward code path
     }
 
     int *sizes_ptr = sizes->storage->data + sizes->storageOffset;
@@ -92,7 +92,7 @@ int gpu_ctc(size_t _probs,
     if (grads->storage) {
         grads_ptr = grads->storage->data + grads->storageOffset;
     } else {
-        grads_ptr = NULL; // this will trigger the score forward code path
+        grads_ptr = nullptr; // this will trigger the score forward code path
     }
 
     int *sizes_ptr = sizes->storage->data + sizes->storageOffset;

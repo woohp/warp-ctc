@@ -28,7 +28,7 @@ class _CTC(Function):
             costs._cdata
         )
         self.grads = grads
-        self.costs = torch.FloatTensor([costs.sum()])
+        self.costs = costs
         if is_gpu:
             self.grads = self.grads.cuda()
         return self.costs

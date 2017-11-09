@@ -19,6 +19,7 @@ if platform.system() == 'Darwin':
     extra_compile_args.extend(['-DAPPLE', '-stdlib=libc++', '-mmacosx-version-min=10.8'])
 else:
     lib_ext = ".so"
+    extra_compile_args.append('-fopenmp')
 
 if enable_gpu:
     extra_compile_args += ['-DWARPCTC_ENABLE_GPU']
